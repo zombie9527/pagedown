@@ -38,6 +38,10 @@
         imagedescription: "enter image description here",
         imagedialog: "<p><b>Insert Image</b></p><p>http://example.com/images/diagram.jpg \"optional title\"<br><br>Need <a href='http://www.google.com/search?q=free+image+hosting' target='_blank'>free image hosting?</a></p>",
 
+        video: "Video <video> Ctrl+M",
+        videodescription: "enter Video description here",
+        videodialog: "<p><b>Insert Video</b></p><p>http://example.com/videos/diagram.mp4 \"optional title\"<br><br>Need <a href='http://www.google.com/search?q=free+video+hosting' target='_blank'>free video hosting?</a></p>",
+
         olist: "Numbered List <ol> Ctrl+O",
         ulist: "Bulleted List <ul> Ctrl+U",
         litem: "List item",
@@ -66,6 +70,7 @@
     // links.
     var imageDefaultText = "http://";
     var linkDefaultText = "http://";
+    var videoDefaultText = "http://";
 
     // -------------------------------------------------------------------
     //  END OF YOUR CHANGES
@@ -111,7 +116,7 @@
                                                   * its own image insertion dialog, this hook should return true, and the callback should be called with the chosen
                                                   * image url (or null if the user cancelled). If this hook returns false, the default dialog will be used.
                                                   */
-
+        hooks.addFalse("insertVideoDialog");
         this.getConverter = function () { return markdownConverter; }
 
         var that = this,
@@ -1253,6 +1258,9 @@
                     case "g":
                         doClick(buttons.image);
                         break;
+                    case "m":
+                        doClick(buttons.video);
+                        break;
                     case "o":
                         doClick(buttons.olist);
                         break;
@@ -1468,12 +1476,12 @@
             buttons.italic = makeButton("wmd-italic-button", getString("italic"), "-20px", bindCommand("doItalic"));
             makeSpacer(1);
             buttons.link = makeButton("wmd-link-button", getString("link"), "-40px", bindCommand(function (chunk, postProcessing) {
-                return this.doLinkOrImage(chunk, postProcessing, false);
+                return this.doLinkOrImageOrVideo(chunk, postProcessing, false, false);
             }));
             buttons.quote = makeButton("wmd-quote-button", getString("quote"), "-60px", bindCommand("doBlockquote"));
             buttons.code = makeButton("wmd-code-button", getString("code"), "-80px", bindCommand("doCode"));
             buttons.image = makeButton("wmd-image-button", getString("image"), "-100px", bindCommand(function (chunk, postProcessing) {
-                return this.doLinkOrImage(chunk, postProcessing, true);
+                return this.doLinkOrImageOrVideo(chunk, postProcessing, true, false);
             }));
             makeSpacer(2);
             buttons.olist = makeButton("wmd-olist-button", getString("olist"), "-120px", bindCommand(function (chunk, postProcessing) {
@@ -1494,6 +1502,10 @@
 
             buttons.redo = makeButton("wmd-redo-button", redoTitle, "-220px", null);
             buttons.redo.execute = function (manager) { if (manager) manager.redo(); };
+
+            buttons.video = makeButton("wmd-video-button", getString("video"), "-260px", bindCommand(function (chunk, postProcessing) {
+                return this.doLinkOrImageOrVideo(chunk, postProcessing, false, true);
+            }));
 
             if (helpOptions) {
                 var helpButton = document.createElement("li");
@@ -1667,7 +1679,7 @@
         // the regex is tested on the (up to) three chunks separately, and on substrings,
         // so in order to have the correct offsets to check against okayToModify(), we
         // have to keep track of how many characters are in the original source before
-        // the substring that we're looking at. Note that doLinkOrImage aligns the selection
+        // the substring that we're looking at. Note that doLinkOrImageOrVideo aligns the selection
         // on potential brackets, so there should be no major breakage from the chunk
         // separation.
         var skippedChars = 0;
@@ -1791,7 +1803,7 @@
         });
     }
 
-    commandProto.doLinkOrImage = function (chunk, postProcessing, isImage) {
+    commandProto.doLinkOrImageOrVideo = function (chunk, postProcessing, isImage, isVideo) {
 
         chunk.trimWhitespace();
         chunk.findTags(/\s*!?\[/, /\][ ]?(?:\n[ ]*)?(\[.*?\])?/);
@@ -1848,12 +1860,15 @@
 
                     var num = that.addLinkDef(chunk, linkDef);
                     chunk.startTag = isImage ? "![" : "[";
+                    if(!isImage)
+                        chunk.startTag = isVideo ? "@[" : "[";
                     chunk.endTag = "][" + num + "]";
 
                     if (!chunk.selection) {
                         if (isImage) {
                             chunk.selection = that.getString("imagedescription");
-                        }
+                        }else if(isVideo)
+                            chunk.selection = that.getString("videodescription");
                         else {
                             chunk.selection = that.getString("linkdescription");
                         }
@@ -1867,6 +1882,9 @@
             if (isImage) {
                 if (!this.hooks.insertImageDialog(linkEnteredCallback))
                     ui.prompt(this.getString("imagedialog"), imageDefaultText, linkEnteredCallback);
+            }else if(isVideo){
+                if (!this.hooks.insertVideoDialog(linkEnteredCallback))
+                    ui.prompt(this.getString("videodialog"), videoDefaultText, linkEnteredCallback);
             }
             else {
                 ui.prompt(this.getString("linkdialog"), linkDefaultText, linkEnteredCallback);

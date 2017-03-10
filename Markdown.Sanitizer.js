@@ -30,7 +30,7 @@
     // video
     var video_white = /^(<video\ssrc="(https?:\/\/|\/)[-A-Za-z0-9+&@#\/%?=~_|!:,.;\(\)*[\]$]+"(\swidth="\d{1,3}")?(\sheight="\d{1,3}")?(\salt="[^"<>]*")?(\stitle="[^"<>]*")?(\scontrols="controls")?(\sautoplay="autoplay")\s?\/?>)$/i;
 
-    function sanitizeTag(tag) {console.log(tag);
+    function sanitizeTag(tag) {
         if (tag.match(basic_tag_whitelist) || tag.match(a_white) || tag.match(img_white) || tag.match(video_white)){
             // console.log(tag);
             return tag;
