@@ -7,7 +7,7 @@
         output = window.Markdown;
         Converter = output.Converter;
     }
-        
+
     output.getSanitizingConverter = function () {
         var converter = new Converter();
         converter.hooks.chain("postConversion", sanitizeHtml);
@@ -27,9 +27,14 @@
     // <img src="url..." optional width  optional height  optional alt  optional title
     var img_white = /^(<img\ssrc="(https?:\/\/|\/)[-A-Za-z0-9+&@#\/%?=~_|!:,.;\(\)*[\]$]+"(\swidth="\d{1,3}")?(\sheight="\d{1,3}")?(\salt="[^"<>]*")?(\stitle="[^"<>]*")?\s?\/?>)$/i;
 
-    function sanitizeTag(tag) {
-        if (tag.match(basic_tag_whitelist) || tag.match(a_white) || tag.match(img_white))
+    // video
+    var video_white = /^(<video\ssrc="(https?:\/\/|\/)[-A-Za-z0-9+&@#\/%?=~_|!:,.;\(\)*[\]$]+"(\swidth="\d{1,3}")?(\sheight="\d{1,3}")?(\salt="[^"<>]*")?(\stitle="[^"<>]*")?(\scontrols="controls")\s?\/?>)$/i;
+
+    function sanitizeTag(tag) {console.log(tag);
+        if (tag.match(basic_tag_whitelist) || tag.match(a_white) || tag.match(img_white) || tag.match(video_white)){
+            // console.log(tag);
             return tag;
+        }
         else
             return "";
     }
@@ -58,7 +63,7 @@
             return html;
 
         var tagname, tag;
-        var ignoredtags = "<p><img><br><li><hr>";
+        var ignoredtags = "<p><img><video><br><li><hr>";
         var match;
         var tagpaired = [];
         var tagremove = [];

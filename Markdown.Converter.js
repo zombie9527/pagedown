@@ -225,7 +225,7 @@ else
                         }
                         return String.fromCharCode(c);
                     })
-                }                
+                }
             })();
         }
         
@@ -289,7 +289,6 @@ else
             text = _StripLinkDefinitions(text);
 
             text = _RunBlockGamut(text);
-
             text = _UnescapeSpecialChars(text);
 
             // attacklab: Restore dollar signs
@@ -297,7 +296,7 @@ else
 
             // attacklab: Restore tildes
             text = text.replace(/~T/g, "~");
-
+            // console.log(pluginHooks.postConversion);
             text = pluginHooks.postConversion(text);
 
             g_html_blocks = g_titles = g_urls = null;
@@ -508,7 +507,6 @@ else
             text = _DoLists(text);
             text = _DoCodeBlocks(text);
             text = _DoBlockQuotes(text);
-            
             text = pluginHooks.postBlockGamut(text, blockGamutHookCallback);
 
             // We already ran _HashHTMLBlocks() before, in Markdown(), but that
@@ -518,7 +516,6 @@ else
             text = _HashHTMLBlocks(text);
             
             text = _FormParagraphs(text, doNotUnhash, doNotCreateParagraphs);
-
             return text;
         }
 
@@ -537,6 +534,7 @@ else
             // Process anchor and image tags. Images must come first,
             // because ![foo][f] looks like an anchor.
             text = _DoImages(text);
+            text = _DoVideos(text);
             text = _DoAnchors(text);
 
             // Make links out of things like `<http://example.com/>`
@@ -553,7 +551,7 @@ else
             text = text.replace(/  +\n/g, " <br>\n");
             
             text = pluginHooks.postSpanGamut(text);
-
+            // console.log(text);
             return text;
         }
 
@@ -719,6 +717,47 @@ else
 
             result += ">" + link_text + "</a>";
 
+            return result;
+        }
+
+        function _DoVideos(text){
+            if(text.indexOf("@[") === -1)
+                return text;
+            text = text.replace(/(@\[(.*?)\][ ]?(?:\n[ ]*)?\[(.*?)\])()()()()/g, writeVideoTag);
+            text = text.replace(/(@\[(.*?)\]\s?\([ \t]*()<?(\S+?)>?[ \t]*((['"])(.*?)\6[ \t]*)?\))/g, writeVideoTag);
+            return text;
+        }
+
+        function writeVideoTag(wholeMatch, m1, m2, m3, m4, m5, m6, m7){
+            var whole_match = m1;
+            var alt_text = m2;
+            var link_id = m3.toLowerCase();
+            var url = m4;
+            var title = m7;
+            if (!title) title = "";
+            if (url == "") {
+                if (link_id == "") {
+                    link_id = alt_text.toLowerCase().replace(/ ?\n/g, " ");
+                }
+                url = "#" + link_id;
+
+                if (g_urls.get(link_id) != undefined) {
+                    url = g_urls.get(link_id);
+                    if (g_titles.get(link_id) != undefined) {
+                        title = g_titles.get(link_id);
+                    }
+                }
+                else {
+                    return whole_match;
+                }
+            }
+            alt_text = escapeCharacters(attributeEncode(alt_text), "*_[]()");
+            url = escapeCharacters(url, "*_");
+            var result = "<video src=\"" + url + "\" alt=\"" + alt_text + "\"";
+            title = attributeEncode(title);
+            title = escapeCharacters(title, "*_");
+            result += " title=\"" + title + "\"";
+            result += " controls=\"controls\" />";
             return result;
         }
 
@@ -1040,7 +1079,6 @@ else
                     
                     var loose = contains_double_newline || last_item_had_a_double_newline;
                     item = _RunBlockGamut(_Outdent(item), /* doNotUnhash = */true, /* doNotCreateParagraphs = */ !loose);
-                    
                     last_item_had_a_double_newline = ends_with_double_newline;
                     return "<li>" + item + "</li>\n";
                 }
