@@ -757,7 +757,7 @@ else
             title = attributeEncode(title);
             title = escapeCharacters(title, "*_");
             result += " title=\"" + title + "\"";
-            result += " controls=\"controls\" />";
+            result += " controls=\"controls\" autoplay=\"autoplay\" />";
             return result;
         }
 
